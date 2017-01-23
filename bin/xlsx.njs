@@ -9,7 +9,7 @@ program
 	.version(X.version)
 	.usage('[options] <file> [sheetname]')
 	.option('-f, --file <file>', 'use specified workbook')
-	.option('-s, --sheet <sheet>', 'print specified sheet (default first sheet)')
+	.option('-s, --sheet <sheet>', 'print specified sheet (default all pages)')
 	.option('-p, --password <pw>', 'if file is encrypted, try with specified pw')
 	.option('-l, --list-sheets', 'list sheet names and exit')
 	.option('-o, --output <file>', 'output to specified file')
@@ -110,12 +110,19 @@ if(program.xlsm) return X.writeFile(wb, sheetname || (filename + ".xlsm"), wopts
 if(program.xlsb) return X.writeFile(wb, sheetname || (filename + ".xlsb"), wopts);
 
 var target_sheet = sheetname || '';
-if(target_sheet === '') target_sheet = wb.SheetNames[0];
+//if(target_sheet === '') target_sheet = wb.SheetNames[0];
 
-var ws;
+var sheets;
 try {
-	ws = wb.Sheets[target_sheet];
-	if(!ws) throw "Sheet " + target_sheet + " cannot be found";
+	if (target_sheet) {	
+		var s = wb.Sheets[target_sheet];
+		if(!s) throw "Sheet " + target_sheet + " cannot be found";
+		sheets = [s];
+	} else {
+		sheets = wb.SheetNames.	map(function(k) {
+			return wb.Sheets[k];
+		});
+	}
 } catch(e) {
 	console.error(n + ": error parsing "+filename+" "+target_sheet+": " + e);
 	process.exit(4);
@@ -123,12 +130,22 @@ try {
 
 if(program.perf) return;
 
-var oo = "";
-if(!program.quiet) console.error(target_sheet);
-if(program.formulae) oo = X.utils.get_formulae(ws).join("\n");
-else if(program.json) oo = JSON.stringify(X.utils.sheet_to_row_object_array(ws));
-else if(program.rawJs) oo = JSON.stringify(X.utils.sheet_to_row_object_array(ws,{raw:true}));
-else oo = X.utils.make_csv(ws, {FS:program.fieldSep, RS:program.rowSep});
+var oo = [];
+sheets.forEach(function(ws){
+	if(!program.quiet) console.error(target_sheet);
+	if(program.formulae) oo.push(X.utils.get_formulae(ws).join("\n"));
+	else if(program.json) oo.push(X.utils.sheet_to_row_object_array(ws));
+	else if(program.rawJs) oo.push(X.utils.sheet_to_row_object_array(ws,{raw:true}));
+	else oo.push(X.utils.make_csv(ws, {FS:program.fieldSep, RS:program.rowSep}));
+});
 
-if(program.output) fs.writeFileSync(program.output, oo);
-else console.log(oo);
+var output = target_sheet && sheets.length == 1 ? oo[0] : oo;
+if (program.json || program.rawJs) {
+	output = JSON.stringify(output);
+} else {
+	output = output.join("\n");
+}
+
+
+if(program.output) fs.writeFileSync(program.output, output);
+else console.log(output);
