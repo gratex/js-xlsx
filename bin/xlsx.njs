@@ -119,7 +119,7 @@ try {
 		if(!s) throw "Sheet " + target_sheet + " cannot be found";
 		sheets = [s];
 	} else {
-		sheets = wb.SheetNames.	map(function(k) {
+		sheets = wb.SheetNames.map(function(k) {
 			return wb.Sheets[k];
 		});
 	}
@@ -131,8 +131,8 @@ try {
 if(program.perf) return;
 
 var oo = [];
-sheets.forEach(function(ws){
-	if(!program.quiet) console.error(target_sheet);
+sheets.forEach(function(ws, index){
+	if(!program.quiet) console.error(target_sheet || wb.SheetNames[index]);
 	if(program.formulae) oo.push(X.utils.get_formulae(ws).join("\n"));
 	else if(program.json) oo.push(X.utils.sheet_to_row_object_array(ws));
 	else if(program.rawJs) oo.push(X.utils.sheet_to_row_object_array(ws,{raw:true}));
