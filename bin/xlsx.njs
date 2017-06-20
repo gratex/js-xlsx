@@ -141,10 +141,12 @@ wb_formats_2.forEach(function(m) { if(program[m[0]]) {
 } });
 
 var target_sheet = sheetname || '';
+/*
 if(target_sheet === '') {
 	if(program.sheetIndex < (wb.SheetNames||[]).length) target_sheet = wb.SheetNames[program.sheetIndex];
 	else target_sheet = (wb.SheetNames||[""])[0];
 }
+*/
 
 var sheets;
 try {
@@ -186,10 +188,10 @@ var oo = [];
 var strm = false;
 sheets.forEach(function(ws, index){
 	if(!program.quiet) console.error(target_sheet || wb.SheetNames[index]);
-	if(program.formulae) oo = X.utils.sheet_to_formulae(ws).join("\n");
-	else if(program.json) oo = JSON.stringify(X.utils.sheet_to_json(ws));
-	else if(program.rawJs) oo = JSON.stringify(X.utils.sheet_to_json(ws,{raw:true}));
-	else if(program.arrays) oo = JSON.stringify(X.utils.sheet_to_json(ws,{raw:true, header:1}));
+	if(program.formulae) oo.push(X.utils.sheet_to_formulae(ws).join("\n"));
+	else if(program.json) oo.push(X.utils.sheet_to_json(ws));
+	else if(program.rawJs) oo.push(X.utils.sheet_to_json(ws,{raw:true}));
+	else if(program.arrays) oo.push(X.utils.sheet_to_json(ws,{raw:true, header:1}));
 	else {
 		strm = true;
 		var stream = X.stream.to_csv(ws, {FS:program.fieldSep, RS:program.rowSep});
