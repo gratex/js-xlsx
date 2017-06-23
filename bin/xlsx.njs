@@ -202,7 +202,7 @@ sheets.forEach(function(ws, index){
 
 if (!strm) {
 	var output = target_sheet && sheets.length == 1 ? oo[0] : oo;
-	if (program.json || program.rawJs) {
+	if (program.json || program.rawJs || program.arrays) {
 		output = JSON.stringify(output);
 	} else {
 		output = output.join("\n");
