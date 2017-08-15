@@ -44,7 +44,9 @@ program
 	.option('--dev', 'development mode')
 	.option('--sparse', 'sparse mode')
 	.option('--read', 'read but do not print out contents')
-	.option('-q, --quiet', 'quiet mode');
+	.option('-q, --quiet', 'quiet mode')
+
+	.option('--ignore-dimension', 'force sheet to generate data from cell A1');
 
 program.on('--help', function() {
 	console.log('  Default output format is CSV');
@@ -187,6 +189,10 @@ if(program.readOnly) process.exit(0);
 var oo = [];
 var strm = false;
 sheets.forEach(function(ws, index){
+	if(program && program.ignoreDimension && ws["!ref"]) {
+		ws["!ref"] = ws["!ref"].replace(/([^:]*)/,"A1");
+	}
+
 	if(!program.quiet) console.error(target_sheet || wb.SheetNames[index]);
 	if(program.formulae) oo.push(X.utils.sheet_to_formulae(ws).join("\n"));
 	else if(program.json) oo.push(X.utils.sheet_to_json(ws));
