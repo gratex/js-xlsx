@@ -58,7 +58,9 @@ program
 	.option('--all', 'parse everything; write as much as possible')
 	.option('--dev', 'development mode')
 	.option('--sparse', 'sparse mode')
-	.option('-q, --quiet', 'quiet mode');
+	.option('-q, --quiet', 'quiet mode')
+
+	.option('--ignore-dimension', 'force sheet to generate data from cell A1');
 
 program.on('--help', function() {
 	console.log('  Default output format is CSV');
@@ -89,6 +91,7 @@ if(program.args[0]) {
 	if(program.args[1]) sheetname = program.args[1];
 }
 if(program.sheet) sheetname = program.sheet;
+if(!program.sheet) program.book = true; // by default gen all pages
 if(program.file) filename = program.file;
 
 if(!filename) {
@@ -204,6 +207,16 @@ try {
 
 if(!program.quiet && !program.book) console.error(target_sheet);
 
+if (program.ignoreDimension) {
+	// replace start position with A1
+	wb.SheetNames.forEach(function(sheet_name, index){
+		var ws = wb.Sheets[sheet_name]
+		if(ws["!ref"]) {
+			ws["!ref"] = ws["!ref"].replace(/([^:]*)/,"A1");
+		}
+	});
+}
+
 /* single worksheet file formats */
 [
 	['biff2', '.xls'],
@@ -235,7 +248,7 @@ function doit(cb) {
 	/*:: if(!wb) throw new Error("unreachable"); */
 	if(program.book) wb.SheetNames.forEach(function(n, i) {
 		/*:: if(!wb) throw new Error("unreachable"); */
-		outit(cb(wb.Sheets[n]), (program.output || sheetname || filename) + "." + i);
+		outit(cb(wb.Sheets[n]), program.output ? (program.output) + "." + i : null);
 	});
 	else outit(cb(ws), program.output);
 }
@@ -253,13 +266,14 @@ switch(true) {
 	case program.json:
 		doit(function(ws) { return JSON.stringify(X.utils.sheet_to_json(ws,jso)); });
 		break;
-
 	default:
 		if(!program.book) {
 			var stream = X.stream.to_csv(ws, {FS:program.fieldSep, RS:program.rowSep});
 			if(program.output) stream.pipe(fs.createWriteStream(program.output));
 			else stream.pipe(process.stdout);
-		} else doit(function(ws) { return X.utils.sheet_to_csv(ws,{FS:program.fieldSep, RS:program.rowSep}); });
+		} else {
+			doit(function(ws) { return X.utils.sheet_to_csv(ws,{FS:program.fieldSep, RS:program.rowSep}); });
+		}
 		break;
 }
 
